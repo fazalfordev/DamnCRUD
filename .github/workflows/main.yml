@@ -1,13 +1,3 @@
-name: Selenium Tests
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,26 +10,36 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: pip install selenium webdriver-manager
 
     - name: Install Apache & PHP
       run: sudo apt update && sudo apt install apache2 php libapache2-mod-php php-mysql -y
 
-    - name: Move files to Apache root
+    - name: Move Files to Apache Root
       run: |
         sudo rm -rf /var/www/html/*
         sudo cp -r * /var/www/html/
         sudo chown -R www-data:www-data /var/www/html/
         sudo systemctl restart apache2
 
-    - name: Check if Apache is running
-      run: sudo systemctl status apache2
+    - name: Debug Apache Status
+      run: |
+        sudo systemctl status apache2
+        sudo netstat -tulnp | grep apache2
 
-    - name: Wait for Apache to start
-      run: sleep 10
+    - name: Check Web Files
+      run: ls -lah /var/www/html/
 
-    - name: Verify server response
+    - name: Check PHP Processing
+      run: |
+        echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php
+        curl -v http://localhost/info.php || exit 1
+
+    - name: Wait for Server to Start
+      run: sleep 20
+
+    - name: Verify Server Response
       run: curl -I http://localhost || exit 1
 
     - name: Run Selenium Tests
