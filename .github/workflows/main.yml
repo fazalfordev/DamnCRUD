@@ -13,6 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: damncrud
+
       selenium:
         image: selenium/standalone-firefox:latest
         ports:
@@ -32,8 +40,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install selenium pytest pytest-xdist
 
+    - name: Wait for MySQL to be ready
+      run: |
+        until mysqladmin ping -h "127.0.0.1" --silent; do
+          echo 'waiting for mysql to be ready...'
+          sleep 5
+        done
+
+    - name: Set up database
+      run: |
+        mysql -h 127.0.0.1 -u root -proot damncrud < db/schema.sql
+        mysql -h 127.0.0.1 -u root -proot damncrud < db/data.sql
+
     - name: Run Selenium tests
       env:
         SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
       run: |
-        pytest -n auto c:/xampp/htdocs/DamnCRUD-main/test.py c:/xampp/htdocs/DamnCRUD-main/test2.py
+        pytest -n auto --maxfail=1 --disable-warnings c:/xampp/htdocs/DamnCRUD-main
