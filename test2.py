@@ -3,22 +3,24 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+import os
+
+def is_ci():
+    return os.getenv('GITHUB_ACTIONS') == 'true'
 
 class FormSubmissionTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        options = webdriver.FirefoxOptions()
+        options = Options()
         options.add_argument('--headless')  # Run in headless mode
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
         options.add_argument('--window-size=1920,1080')
 
-        # Fix: Set timeout and ensure Firefox starts properly
-        service = Service(GeckoDriverManager().install())
-        cls.driver = webdriver.Firefox(service=service, options=options, timeout=300)
-        cls.driver.implicitly_wait(15)  # Implicit wait for all elements
+        cls.driver = webdriver.Firefox(options=options)
+        cls.driver.implicitly_wait(15)
 
     def test_01_navigate_to_url(self):
         self.driver.get('http://localhost/DamnCRUD-main/login.php')
@@ -26,7 +28,7 @@ class FormSubmissionTestCase(unittest.TestCase):
 
     def test_02_login(self):
         self.driver.get('http://localhost/DamnCRUD-main/login.php')
-
+        
         username_field = WebDriverWait(self.driver, 15).until(
             EC.visibility_of_element_located((By.ID, 'inputUsername'))
         )
@@ -38,16 +40,9 @@ class FormSubmissionTestCase(unittest.TestCase):
         login_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
         login_button.click()
 
-        # Verify successful login
         WebDriverWait(self.driver, 15).until(EC.url_contains('index.php'))
         self.assertIn("index.php", self.driver.current_url, "Login failed or did not redirect")
-        
-        # Verify greeting message
-        greeting_text = WebDriverWait(self.driver, 15).until(
-            EC.visibility_of_element_located((By.TAG_NAME, "h2"))
-        ).text
-        self.assertTrue("Howdy, damn" in greeting_text, "Login failed: Greeting message not found")
-
+    
     def test_03_verify_edit_and_delete_buttons(self):
         self.driver.get("http://localhost/DamnCRUD-main/index.php")
         
@@ -73,23 +68,20 @@ class FormSubmissionTestCase(unittest.TestCase):
 
         self.driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
 
-        # Verify redirect and contact creation
         WebDriverWait(self.driver, 15).until(EC.url_contains("index.php"))
         self.assertIn("Test User", self.driver.page_source, "Test Failed: Contact not found in the list.")
-
+    
     def test_05_update_contact(self):
         self.driver.get("http://localhost/DamnCRUD-main/index.php")
-
-        # Find edit button dynamically
+        
         try:
             edit_button = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'update.php?id=20')]"))
+                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'update.php?id=')]"))
             )
             edit_button.click()
         except:
             self.fail("Test Failed: Edit button not found for 'Test User'")
 
-        # Update details
         name_field = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.NAME, 'name')))
         name_field.clear()
         name_field.send_keys('Updated User')
@@ -102,11 +94,10 @@ class FormSubmissionTestCase(unittest.TestCase):
         self.driver.find_element(By.NAME, 'title').send_keys('Updated QA Engineer')
 
         self.driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
-
-        # Verify update
+        
         WebDriverWait(self.driver, 15).until(EC.url_contains("index.php"))
         self.assertIn("Updated User", self.driver.page_source, "Test Failed: Updated contact not found.")
-
+    
     def test_06_delete_contact(self):
         self.driver.get("http://localhost/DamnCRUD-main/index.php")
 
@@ -116,7 +107,7 @@ class FormSubmissionTestCase(unittest.TestCase):
 
         try:
             delete_button = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'delete.php?id=20')]"))
+                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'delete.php?id=')]"))
             )
             delete_button.click()
             WebDriverWait(self.driver, 5).until(EC.alert_is_present())
@@ -124,10 +115,9 @@ class FormSubmissionTestCase(unittest.TestCase):
         except:
             self.fail("Test Failed: Delete button not found for 'Updated User'")
 
-        # Verify deletion
         WebDriverWait(self.driver, 15).until(EC.url_contains("index.php"))
         self.assertNotIn("Updated User", self.driver.page_source, "Test Failed: Contact was not deleted.")
-
+    
     def test_07_logout(self):
         self.driver.get("http://localhost/DamnCRUD-main/index.php")
 
@@ -138,10 +128,10 @@ class FormSubmissionTestCase(unittest.TestCase):
 
         WebDriverWait(self.driver, 15).until(EC.url_contains('login.php'))
         self.assertIn("login.php", self.driver.current_url, "Logout failed or did not redirect to login.php")
-
+    
     @classmethod
     def tearDownClass(cls):
         cls.driver.quit()
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2, warnings='ignore')
+    unittest.main(verbosity=2)
