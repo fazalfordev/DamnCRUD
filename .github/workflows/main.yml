@@ -42,7 +42,7 @@ jobs:
       run: curl -v http://localhost/login.php || exit 1
 
     - name: Sleep Before Running Tests
-      run: sleep 30
+      run: sleep 10
 
     - name: Run Selenium Tests
       run: python test2.py
