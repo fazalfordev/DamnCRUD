@@ -34,6 +34,7 @@ jobs:
 
       - name: Import database
         run: |
+          sudo apt-get update
           sudo apt-get install -y mysql-client
           mysql -h 127.0.0.1 -P 3306 -u root -proot damncrud < db/damncrud.sql
 
@@ -45,9 +46,9 @@ jobs:
       - name: Install dependencies for Selenium
         run: |
           sudo apt-get install -y firefox
-          pip install selenium
+          pip install selenium webdriver-manager
 
       - name: Run Selenium tests in headless mode
         run: |
-          python -c "from selenium import webdriver; options = webdriver.FirefoxOptions(); options.add_argument('--headless'); driver = webdriver.Firefox(options=options); driver.quit()"
+          python -c "from selenium import webdriver; from webdriver_manager.firefox import GeckoDriverManager; options = webdriver.FirefoxOptions(); options.add_argument('--headless'); driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=options); driver.quit()"
           python selenium_test.py
