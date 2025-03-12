@@ -9,14 +9,39 @@ jobs:
   selenium-test:
     runs-on: ubuntu-latest
     services:
-      selenium:
-        image: selenium/standalone-firefox:latest
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: damncrud_db
         ports:
-          - 4444:4444
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+
+      - name: Install PHP and Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y php php-cli php-mbstring php-xml php-curl php-mysql unzip
+          php -v
+
+      - name: Set Up Apache and Start Server
+        run: |
+          sudo apt install -y apache2 libapache2-mod-php
+          sudo systemctl start apache2
+          sudo cp -r . /var/www/html/DamnCRUD-main
+          echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php
+          sudo chmod -R 777 /var/www/html/DamnCRUD-main
+          sudo systemctl restart apache2
+
+      - name: Set Up MySQL Database
+        run: |
+          sudo apt install -y mysql-client
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS damncrud_db;"
+          mysql -h 127.0.0.1 -u root -proot damncrud_db < /var/www/html/DamnCRUD-main/dump.sql
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,8 +54,14 @@ jobs:
           pip install selenium webdriver-manager
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Selenium Tests (test2.py)
+      - name: Wait for Server to Start
+        run: |
+          echo "Waiting for server to be reachable..."
+          sleep 10
+          curl -I http://localhost/DamnCRUD-main/login.php || exit 1
+
+      - name: Run Selenium Tests (test.py)
         env:
           DISPLAY: :99
         run: |
-          python test2.py
+          python test.py
