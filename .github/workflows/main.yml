@@ -1,4 +1,4 @@
-name: Selenium Tests
+name: Run Selenium Tests
 
 on:
   push:
@@ -11,38 +11,60 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: damncrud
+          MYSQL_USER: root
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=localhost --user=root --password=root"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Install MySQL Client
+        run: sudo apt-get install -y mysql-client
 
-    - name: Install Dependencies
-      run: pip install selenium webdriver-manager
+      - name: Load Database Dump
+        run: |
+          curl -o damncrud.sql https://raw.githubusercontent.com/fazalfordev/DamnCRUD/main/db/damncrud.sql
+          mysql -h 127.0.0.1 -u root -proot damncrud < damncrud.sql
 
-    - name: Install Apache & PHP
-      run: sudo apt update && sudo apt install apache2 php libapache2-mod-php php-mysql -y
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install selenium webdriver-manager requests
 
-    - name: Deploy Application Files
-      run: |
-        sudo cp -r * /var/www/html/
-        sudo chown -R www-data:www-data /var/www/html/
-        sudo chmod -R 755 /var/www/html/
-        sudo systemctl restart apache2
+      - name: Start Apache and PHP
+        run: |
+          sudo apt update
+          sudo apt install -y apache2 php libapache2-mod-php php-mysql
+          sudo systemctl enable apache2
+          sudo systemctl start apache2
+          sudo cp -r . /var/www/html/
+          sudo systemctl restart apache2
 
-    - name: Check if Apache is Running
-      run: |
-        sudo systemctl status apache2 || exit 1
-        sudo netstat -tulnp | grep apache2 || exit 1
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://localhost/login.php >/dev/null; then
+              echo "✅ Server is up!"
+              exit 0
+            fi
+            echo "⏳ Waiting for server..."
+            sleep 3
+          done
+          echo "❌ Server did not start in time"
+          exit 1
 
-    - name: Verify Apache Can Serve Pages
-      run: curl -v http://localhost/login.php || exit 1
-
-    - name: Sleep Before Running Tests
-      run: sleep 10
-
-    - name: Run Selenium Tests
-      run: python test2.py
+      - name: Run Selenium tests
+        run: python test2.py
