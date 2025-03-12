@@ -11,20 +11,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testdb
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -35,15 +21,26 @@ jobs:
         python-version: '3.10'
 
     - name: Install dependencies
-      run: |
-        pip install selenium webdriver-manager
+      run: pip install selenium webdriver-manager
 
-    - name: Start web server
+    - name: Install Apache & PHP
+      run: sudo apt update && sudo apt install apache2 php libapache2-mod-php php-mysql -y
+
+    - name: Move files to Apache root
       run: |
-        sudo apt update
-        sudo apt install apache2 php libapache2-mod-php php-mysql -y
+        sudo rm -rf /var/www/html/*
         sudo cp -r * /var/www/html/
-        sudo service apache2 restart
+        sudo chown -R www-data:www-data /var/www/html/
+        sudo systemctl restart apache2
+
+    - name: Check if Apache is running
+      run: sudo systemctl status apache2
+
+    - name: Wait for Apache to start
+      run: sleep 10
+
+    - name: Verify server response
+      run: curl -I http://localhost || exit 1
 
     - name: Run Selenium Tests
       run: python test2.py
