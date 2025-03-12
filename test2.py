@@ -11,7 +11,8 @@ class FormSubmissionTestCase(unittest.TestCase):
     def setUpClass(cls):
         options = webdriver.FirefoxOptions()
         options.add_argument('--headless')  # Run in headless mode
-        service = Service(GeckoDriverManager().install())  # Auto-manage Geckodriver
+    
+        service = Service(GeckoDriverManager().install())  # Fix: Use Service()
         cls.driver = webdriver.Firefox(service=service, options=options)
         cls.driver.implicitly_wait(10)  # Implicit wait for all elements
 
