@@ -38,7 +38,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install selenium pytest pytest-xdist
+        pip install selenium pytest pytest-xdist pytest-selenium
 
     - name: Wait for MySQL to be ready
       run: |
@@ -51,8 +51,11 @@ jobs:
       run: |
         mysql -h 127.0.0.1 -u root -proot damncrud < db/damncrud.sql
 
+    - name: Debug - List test files
+      run: ls -R ./tests
+
     - name: Run Selenium tests
       env:
         SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
       run: |
-        pytest -n auto --maxfail=1 --disable-warnings c:/xampp/htdocs/DamnCRUD-main
+        pytest -n auto --maxfail=1 --disable-warnings ./tests
