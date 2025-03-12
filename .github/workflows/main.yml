@@ -47,5 +47,7 @@ jobs:
           sudo apt-get install -y firefox
           pip install selenium
 
-      - name: Run Selenium tests
-        run: python selenium_test.py
+      - name: Run Selenium tests in headless mode
+        run: |
+          python -c "from selenium import webdriver; options = webdriver.FirefoxOptions(); options.add_argument('--headless'); driver = webdriver.Firefox(options=options); driver.quit()"
+          python selenium_test.py
