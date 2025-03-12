@@ -40,8 +40,9 @@ jobs:
       - name: Set Up MySQL Database
         run: |
           sudo apt install -y mysql-client
+          wget -O damncrud.sql https://raw.githubusercontent.com/fazalfordev/DamnCRUD/main/db/damncrud.sql
           mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS damncrud_db;"
-          mysql -h 127.0.0.1 -u root -proot damncrud_db < /var/www/html/DamnCRUD-main/dump.sql
+          mysql -h 127.0.0.1 -u root -proot damncrud_db < damncrud.sql
 
       - name: Set up Python
         uses: actions/setup-python@v4
