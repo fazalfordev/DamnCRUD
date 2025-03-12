@@ -46,4 +46,4 @@ jobs:
         sudo service apache2 restart
 
     - name: Run Selenium Tests
-      run: python test_script.py
+      run: python test2.py
