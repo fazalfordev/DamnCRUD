@@ -29,8 +29,8 @@ jobs:
           pip install selenium webdriver-manager
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Selenium Tests (task2.py)
+      - name: Run Selenium Tests (test2.py)
         env:
           DISPLAY: :99
         run: |
-          python task2.py
+          python test2.py
