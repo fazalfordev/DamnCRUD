@@ -1,4 +1,4 @@
-name: Automated Selenium Test
+name: Selenium Tests
 
 on:
   push:
@@ -13,42 +13,37 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:latest
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: damncrud
+          MYSQL_DATABASE: testdb
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --host=localhost --user=root --password=root"
+          --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=3
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Wait for MySQL to be ready
-        run: sleep 10
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Import database
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-client
-          mysql -h 127.0.0.1 -P 3306 -u root -proot damncrud < db/damncrud.sql
+    - name: Install dependencies
+      run: |
+        pip install selenium webdriver-manager
 
-      - name: Set up PHP and start server
-        run: |
-          sudo apt-get install -y php php-mysqli
-          php -S localhost:8000 -t . &
+    - name: Start web server
+      run: |
+        sudo apt update
+        sudo apt install apache2 php libapache2-mod-php php-mysql -y
+        sudo cp -r * /var/www/html/
+        sudo service apache2 restart
 
-      - name: Install dependencies for Selenium
-        run: |
-          sudo apt-get install -y firefox
-          pip install selenium webdriver-manager
-
-      - name: Run Selenium tests in headless mode
-        run: |
-          python -c "from selenium import webdriver; from webdriver_manager.firefox import GeckoDriverManager; options = webdriver.FirefoxOptions(); options.add_argument('--headless'); driver = webdriver.Firefox(service=webdriver.FirefoxService(GeckoDriverManager().install()), options=options); driver.quit()"
-          python selenium_test.py
+    - name: Run Selenium Tests
+      run: python test_script.py
