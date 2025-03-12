@@ -1,4 +1,4 @@
-name: Selenium Tests
+name: Automated Selenium Test
 
 on:
   push:
@@ -9,42 +9,46 @@ on:
       - main
 
 jobs:
-  selenium-tests:
+  test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: damncrud
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=localhost --user=root --password=root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+      - name: Wait for MySQL to be ready
+        run: sleep 10
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Install Firefox and Geckodriver
+      - name: Import database
         run: |
           sudo apt-get update
-          sudo apt-get install -y firefox
-          wget -q https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-v0.33.0-linux64.tar.gz
-          tar -xzf geckodriver-v0.33.0-linux64.tar.gz
-          sudo mv geckodriver /usr/local/bin/
+          sudo apt-get install -y mysql-client
+          mysql -h 127.0.0.1 -P 3306 -u root -proot damncrud < db/damncrud.sql
 
-      - name: Run Selenium Tests
-        env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
-          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      - name: Set up PHP and start server
         run: |
-          python -m unittest discover -s tests -p "test_*.py"
+          sudo apt-get install -y php php-mysqli
+          php -S localhost:8000 -t . &
 
-      - name: Upload Test Results (if failed)
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: selenium-test-results
-          path: test-reports/
+      - name: Install dependencies for Selenium
+        run: |
+          sudo apt-get install -y firefox
+          pip install selenium webdriver-manager
+
+      - name: Run Selenium tests in headless mode
+        run: |
+          python -c "from selenium import webdriver; from webdriver_manager.firefox import GeckoDriverManager; options = webdriver.FirefoxOptions(); options.add_argument('--headless'); driver = webdriver.Firefox(service=webdriver.FirefoxService(GeckoDriverManager().install()), options=options); driver.quit()"
+          python test2.py
