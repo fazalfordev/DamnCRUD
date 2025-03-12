@@ -61,8 +61,8 @@ jobs:
           sleep 10
           curl -I http://localhost/DamnCRUD-main/login.php || exit 1
 
-      - name: Run Selenium Tests (test.py)
+      - name: Run Selenium Tests (test2.py)
         env:
           DISPLAY: :99
         run: |
-          python test.py
+          python test2.py
