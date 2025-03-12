@@ -55,10 +55,10 @@ class FormSubmissionTestCase(unittest.TestCase):
             username_field = WebDriverWait(self.driver, 15).until(
                 EC.visibility_of_element_located((By.ID, 'inputUsername'))
             )
-            username_field.send_keys(os.getenv("TEST_USERNAME", "admin"))
+            username_field.send_keys('admin')
 
             password_field = self.driver.find_element(By.ID, 'inputPassword')
-            password_field.send_keys(os.getenv("TEST_PASSWORD", "nimda666!"))
+            password_field.send_keys('nimda666!')
 
             login_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
             login_button.click()
@@ -103,7 +103,7 @@ class FormSubmissionTestCase(unittest.TestCase):
 
         try:
             edit_button = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'update.php?id=')]"))
+                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'update.php?id=13')]"))
             )
             edit_button.click()
         except:
@@ -131,7 +131,7 @@ class FormSubmissionTestCase(unittest.TestCase):
 
         try:
             delete_button = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'delete.php?id=')]"))
+                EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'delete.php?id=13')]"))
             )
             delete_button.click()
             WebDriverWait(self.driver, 5).until(EC.alert_is_present())
