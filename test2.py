@@ -1,6 +1,7 @@
 import os
 import unittest
 import time
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,29 +20,32 @@ class FormSubmissionTestCase(unittest.TestCase):
         cls.driver = webdriver.Firefox(service=service, options=options)
         cls.driver.implicitly_wait(10)  # Wait for elements to load
 
-        # Get BASE_URL from environment or use default
-        cls.BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+        # Use BASE_URL from environment or default to "http://localhost"
+        cls.BASE_URL = os.getenv("BASE_URL", "http://localhost")
 
-        # Ensure the server is running before proceeding
+        print(f"🔍 Checking if server is running at: {cls.BASE_URL}/login.php")
         cls.wait_for_server()
 
     @classmethod
     def wait_for_server(cls):
-        """Check if the server is up before running tests."""
-        for _ in range(10):
+        """Ensure the server is up before running tests."""
+        for attempt in range(10):
             try:
-                cls.driver.get(cls.BASE_URL + "/login.php")
-                if "Login" in cls.driver.title:
+                response = requests.get(cls.BASE_URL + "/login.php", timeout=5)
+                print(f"✅ Attempt {attempt + 1}: Server responded with status {response.status_code}")
+                if response.status_code == 200:
+                    print("🎉 Server is up and running!")
                     return
-            except:
-                pass
+            except requests.exceptions.RequestException as e:
+                print(f"⚠️ Attempt {attempt + 1}: Server not reachable ({e})")
             time.sleep(3)
-        raise Exception("Server is not responding. Check if it's running.")
+
+        raise Exception("❌ Server is not responding. Check if it's running.")
 
     def test_01_navigate_to_url(self):
         """Verify that the login page is reachable."""
         self.driver.get(self.BASE_URL + "/login.php")
-        self.assertIn("Login", self.driver.title, "Home page title does not match")
+        self.assertIn("Login", self.driver.title, "Login page title does not match")
 
     def test_02_login(self):
         """Test login functionality."""
