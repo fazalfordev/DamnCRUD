@@ -1,19 +1,21 @@
-name: Run Selenium Tests
+name: Selenium Test Automation
 
 on:
   push:
     branches: [main]
+  pull_request:
 
 jobs:
-  selenium-tests:
+  selenium-test:
     runs-on: ubuntu-latest
     services:
       selenium:
         image: selenium/standalone-firefox:latest
         ports:
           - 4444:4444
+
     steps:
-      - name: Check out repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -21,14 +23,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install selenium webdriver-manager
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run test2.py
+      - name: Run Selenium Tests (task2.py)
         env:
           DISPLAY: :99
         run: |
-          python test2.py
+          python task2.py
