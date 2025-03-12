@@ -44,7 +44,7 @@ jobs:
 
       - name: Install dependencies for Selenium
         run: |
-          sudo apt-get install -y firefox-geckodriver
+          sudo apt-get install -y firefox
           pip install selenium
 
       - name: Run Selenium tests
