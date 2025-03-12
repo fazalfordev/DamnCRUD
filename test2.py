@@ -10,6 +10,7 @@ class FormSubmissionTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         options = webdriver.FirefoxOptions()
+        options.add_argument('--headless')
         cls.driver = webdriver.Firefox(options=options)
         cls.driver.implicitly_wait(10)  # Implicit wait for elements
 
