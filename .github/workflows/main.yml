@@ -49,8 +49,7 @@ jobs:
 
     - name: Set up database
       run: |
-        mysql -h 127.0.0.1 -u root -proot damncrud < db/schema.sql
-        mysql -h 127.0.0.1 -u root -proot damncrud < db/data.sql
+        mysql -h 127.0.0.1 -u root -proot damncrud < db/damncrud.sql
 
     - name: Run Selenium tests
       env:
